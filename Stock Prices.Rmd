@@ -1,0 +1,218 @@
+---
+title: "Data Visualization (MMI226820) - CW2"
+author: "El-Bagoury Nourhan - S2223029"
+date: "`r Sys.Date()`"
+output:
+  word_document: 
+    fig_caption: yes
+    keep_md: yes
+  html_document:
+    df_print: paged
+  pdf_document: default
+editor_options: 
+  chunk_output_type: inline
+---
+
+# Background Information and Summary of the Data
+
+The big tech stock prices dataset contains historical stock prices of the biggest technology companies in the world, including Apple, Amazon, Google, Facebook, and Microsoft. The data spans from 2010 till present, and includes daily stock prices for each company, as well as their opening and closing prices, highest and lowest prices, trading volume, and adjusted closing prices. Its update frequency is mostly Quarterly.
+
+The purpose of this work is to perform an analysis of the big tech stock prices dataset using R. The goal is to explore the data, pre-process it, and extract insights through data visualization and basic statistics. This analysis can help investors and financial analysts to understand the trends and patterns in the stock prices of these technology companies, and make informed decisions about their investments. In order to achieve this goal, we can use R to perform various tasks such as importing the data, cleaning and pre-processing it, exploring and visualizing the data through plots and graphs, and conducting basic statistical analyses such as calculating means, variances, and correlations where appropriate.
+
+
+# Installing Relevant Packages and Importing Necessary Libraries
+
+```{r Packages and Libraries, echo=TRUE}
+library(tidyverse)
+library(ggplot2)
+library(dplyr)
+library(lubridate)
+```
+
+# Characteristics of the Variables of Interest
+
+The dataset contains 45088 observations and the following column variables which described as follows:
+
+X: It lists the no. of observations.
+
+Stock Symbol: It includes the names of the top tech. companies
+
+Date: It is the date on which the prices were recorded which ranges from 2010 to 2023.
+
+High: The highest price at which a stock is traded during the course of the trading day. This variable represents the highest price at which a stock is traded during the course of the trading day. The minimum and maximum values of the High variable are 1.109 and 700.990, respectively, with a mean of 90.370.
+
+Low: This variable represents the lowest price at which a stock is traded during the course of the trading day. The minimum and maximum values of the Low variable are 0.9987 and 686.0900, respectively, with a mean of 88.1119.
+
+Open: This variable represents the price at which a stock started trading when the opening bell rang. The minimum and maximum values of the Open variable are 1.076 and 696.280, respectively, with a mean of 89.267.
+
+Close: This variable represents the last price at which a stock trades during a regular trading session. The minimum and maximum values of the Close variable are 1.053 and 691.690, respectively, with a mean of 89.271.
+
+Volume: This variable represents the number of shares that changed hands during a given day. The minimum and maximum values of the Volume variable are 5.892e+05 and 1.881e+09, respectively, with a mean of 5.298e+07.
+
+Adj Close: This variable represents the adjusted closing price, which factors in corporate actions such as stock splits, dividends, and rights offerings. The minimum and maximum values of the Adj_Close variable are 1.053 and 691.690, respectively, with a mean of 85.210.
+
+
+# Data Pre-processing and Wrangling/Description of EDA Used Techniques
+
+The big tech stock prices dataset is mostly clean and ready for analysis. After performing the data wrangling process, the dataset was thoroughly checked using several functions in R to ensure that it was clean and ready for analysis. The glimpse() function provided a concise summary of the dataframe, including the variable names, data types, and sample values. The summary() function gave a statistical summary of the variables, including the mean, median, minimum, and maximum values. The dim(), nrow(), and ncol() functions gave the number of rows and columns in the dataset. The colnames() function displayed the names of the columns in the data. The count() function was used to display the number of shares of each tech. company. The str() function checked the structure of the data, including the data type of each variable. As for, the is.na() function was used to check for missing values in the data. and finally, filtering the data by removing unnecessary variables which is the 'x' and 'adj_close column', and creating a new column in the dataframe called 'year' using the date column for optimized plot visualizations. By using these functions, we were able to ensure that the dataset was clean and ready for analysis and that any necessary adjustments or corrections were made.
+
+```{r EDA, echo=TRUE}
+
+# import Big Tech Stock Prices data as a dataframe
+data <- read.csv("btsp.csv")
+
+# sample of the data
+data[sample(nrow(data),10),]
+
+# display a concise summary of the dataframe 
+glimpse(data)
+
+# statistical summary of the variables in a dataframe 
+summary(data)
+
+# number of rows & columns in the dataset
+dim(data)
+
+# number of rows in the dataset
+nrow(data)
+
+# number of columns in the data
+ncol(data)
+
+# display names of columns in the data
+colnames(data)
+
+# display number of shares of each tech. company
+count(data, stock_symbol)
+
+# check the structure of the data, including the data type of each variable 
+str(data)
+
+# check for missing values in the data
+head(is.na(data), n = 5)
+
+# drop Unneeded variables
+data <- select(data, -X, -adj_close)
+
+# create a new column in the data frame called "Year"
+data$year <- year(data$date)
+
+```
+
+# Research Questions
+
+After examining the stock prices of the top tech companies data, it appeared that it can be utilized to gain a better understanding of the trends and patterns in the industry. This information can be useful for investors who are looking to make informed decisions about which tech companies to invest in, as well as for policymakers who are interested in promoting growth and innovation in the tech industry. Accordingly, we can gain a better understanding of the trends and patterns in such field. Moreover, by identifying the top tech company with the most growth in stock prices over the years, we can gain insights into which companies are performing well and have the potential for future growth. Hence, it can stand as a role model for other companies to follow its lead. The two chosen research questions are as follows:
+
+## 1.  How have the stock prices of the top tech companies changed over time?
+
+```{r, echo=TRUE, fig.show = "asis"}
+# convert the date variable to date format
+data$date <- ymd(data$date)
+
+# group by stock symbol and date variables, calculate average price
+data_avg <- data %>% 
+  group_by(stock_symbol, date) %>% 
+  summarize(Open = mean(open), Close = mean(close), High = mean(high), Low = mean(low), Volume = mean(volume))
+
+# show stock prices of top tech companies over time
+ggplot(data, aes(x = date, y = close, color = stock_symbol)) +
+  geom_line() +
+  labs(title = "Stock Prices of Top Tech Companies Over Time", x = "Date", y = "Close Price", color = "Stock Symbol") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+# create a scatter plot for the Open variable over time, with each point representing a different stock_symbol
+ggplot(data, aes(x = date, y = open, color = stock_symbol)) +
+  geom_point() +
+  labs(title = "Open Prices for Top Tech Companies Over Time", x = "Date", y = "Open Price") +
+  scale_x_date(date_breaks = "1 year", date_labels = "%Y") +
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, vjust = 0.5))
+
+# distribution of closing prices for each company
+ggplot(data, aes(x = stock_symbol, y = close)) +
+  geom_boxplot(fill = "orange", color = "lightblue") +
+  labs(title = "Closing Prices by Company", x = "Company", y = "Closing Price")
+
+# bubble Plot of high and low prices for each company
+ggplot(data_avg, aes(x = High, y = Low, size = Volume, color = stock_symbol)) + 
+  geom_point(alpha = 0.5) +
+  scale_size_continuous(range = c(2, 15)) +
+  labs(title = "High and Low Prices for each Company", x = "High Price", y = "Low Price", size = "Volume", color = "Stock Symbol")
+
+```
+
+The previous code addresses the first research question to observe how stock prices of the top tech companies changed over time by grouping the data by stock symbol and date, and calculates the average open, close, high, low, and volume prices. This is useful for getting a more general idea of the stock prices for each company over time. The resulting data is then used in the subsequent visualizations:
+
+The first visualization is a line plot showing the stock prices of the top tech companies over time. This is a suitable visualization type because it allows for the comparison of how the stock prices of different companies have changed over time. The x-axis represents time (in years), the y-axis represents the close price, and each line represents a different stock symbol. As shown in the plot, most of the lines are rising up which indicates the stock price of the tech. companies are increasing over time. Even though, some other companies illustrated a steep down such as Netflix after 2021 which after the year of the pandemic and the working from home phenomenon was demolishing. Following its trend is Meta, which draws attention to its social-political scandal of its users' data leak and their confrontation with the US Congress after their infamous incident with Cambridge Analytica and the Facebook users' major data breach in favor of the US presidential elections.
+
+The second visualization is a scatter plot showing the open prices for top tech companies over time. This visualization type is chosen to show the relationship between the open price and time for different companies. Each point represents a different stock symbol, and the x-axis represents time (in years) while the y-axis represents the open price. It illustrates the same wave of the close price analysis, which indicates the compatibility of open and close prices that can be an indicator of the level of volatility in the stock market or a particular stock and relatively a stable market. 
+
+The third visualization is a boxplot, the box represents the interquartile range (IQR) of the data, with the median line shown inside the box. The whiskers extend to the minimum and maximum values of the data, and any points outside the whiskers are considered outliers. it shows the distribution of closing prices for each company. Each box represents a different company and The x-axis represents the stock symbols of the companies and the y-axis represents the closing prices. The box shows the median value (the horizontal line inside the box), the upper and lower quartiles (the top and bottom edges of the box), and the whiskers that extend to the minimum and maximum values that are not outliers. Outliers are shown as individual points outside the whiskers. The plot allows for a quick comparison of the distribution of closing prices across different companies.
+
+The fourth visualization is a bubble plot showing the high and low prices for each company. This visualization type is useful for comparing the high and low prices for each company. The x-axis represents the high price, the y-axis represents the low price, and the size of each bubble represents the volume. The color of each bubble represents the stock symbol. This plot also presents the compatibility between open and close prices as the bubble line is trending up.
+
+Overall, these visualizations provide a comprehensive view of the stock prices for top tech companies over time, including trends, distributions, and comparisons between companies. These insights can be used for further analysis and decision making in the financial and investment world.
+
+## 2.  Which top tech company has had the most growth in stock prices over the years?
+
+```{r, echo=TRUE, fig.show = "asis"}
+# Calculate percentage change in close prices for each company
+growth <- data %>%
+  group_by(stock_symbol) %>%
+  summarize(growth_rate = ((last(close) - first(close)) / first(close)) * 100)
+
+# Identify company with highest growth rate
+top_gainer <- growth %>%
+  arrange(desc(growth_rate)) %>%
+  slice(1)
+
+# Display results
+cat("The top tech company with the highest growth rate is", top_gainer$stock_symbol, "with a growth rate of", round(top_gainer$growth_rate, 2), "%.")
+
+
+# Visualize results
+ggplot(growth, aes(x = stock_symbol, y = growth_rate)) +
+  geom_bar(stat = "identity", fill = "steelblue") +
+  labs(title = "Top Tech Company with Highest Growth Rate", x = "Company", y = "Growth Rate (%)")
+
+```
+
+The above code addresses the second research question to determine the top tech company that has had the most growth in stock prices over the years by calculating the percentage change in the closing prices of each company in the tech industry dataset and identifying the top tech company with the highest growth rate. The geom_bar style is selected for visualizing the results as it is well-suited for displaying categorical data. The code consists of a group of functions as follows:
+
+growth \<- data %\>% group_by(stock_symbol) %\>% summarize(growth_rate = ((last(close) - first(close)) / first(close)) \* 100) calculates the growth rate for each company by subtracting the first close price from the last close price for each company, dividing the difference by the first close price, and multiplying the result by 100. This is done using the dplyr package in R.
+
+top_gainer \<- growth %\>% arrange(desc(growth_rate)) %\>% slice(1) identifies the company with the highest growth rate by arranging the growth rates in descending order and selecting the first row of the resulting data frame.
+
+cat("The top tech company with the highest growth rate is", top_gainer$stock_symbol, "with a growth rate of", round(top_gainer$growth_rate, 2), "%.") displays the results of the analysis, with the name of the company and its corresponding growth rate printed to the console.
+
+ggplot(growth, aes(x = stock_symbol, y = growth_rate)) + geom_bar(stat = "identity", fill = "steelblue") + labs(title = "Top Tech Company with Highest Growth Rate", x = "Company", y = "Growth Rate (%)") creates a bar chart of the growth rates for each company in the dataset using the ggplot2 package in R. The x-axis represents the stock symbol of each company, while the y-axis represents the growth rate. The geom_bar function is used to create the bars in the chart, and the fill argument is used to set the color of the bars to "steelblue". The labs function is used to add a title and axis labels to the chart.
+
+The output of the code shows that the top tech company with the highest growth rate is TSLA with an extensive growth rate of 7568.06%. This information can be useful for investors looking for opportunities to invest in high-growth companies in the tech industry. The bar chart visualizes the growth rates of each company, highlighting the differences in growth rates between the companies. The use of color in the chart makes it easy to identify the company with the highest growth rate. Overall, the bar chart provides a clear and concise way to visualize the growth rates of each company in the dataset.
+
+# Conclusion and Insights
+
+The Big Tech Stock Prices dataset provides a rich source of information on the stock prices of major technology companies over the past decade. Through the use of data pre-processing, visualization, and statistical analysis in R, several insights and trends can be identified to make informed decisions regarding stock market investments and predict upcoming trends.
+
+One of the key research questions explored is how the stock prices of top tech companies have changed over time. The visualizations and statistical analysis indicated that the stock prices of many of these companies have generally trended upwards over the past decade but with significant variations and occasional downturns. Companies like Apple, Amazon, and Google's parent company Alphabet had generally positive growth rates over the period, while others like Facebook and Netflix had more volatility and mixed performance due to their involvement in social and political scandals and dilemmas, distressing the mainstream public.
+
+Another research question examined which top tech companies had the highest growth rate over the period. The analysis showed that Tesla had the highest growth rate, with a remarkable 7568% increase in stock price over the period. Consequently, it is foreseen that the automotive future is electric.
+
+In addition, the analysis also explored the distribution of closing prices for each company. The boxplot visualization indicated that companies like Google and Microsoft had relatively stable and consistent closing prices, while companies like Facebook and Netflix had more variability and outliers.
+
+Overall, these insights and trends in the data have important implications for investors and analysts in the technology sector. The positive growth rates and overall upward trends in stock prices suggest that the sector remains a strong investment opportunity, but also highlight the importance of monitoring individual company performance and volatility. The high growth rate of Tesla underscores the importance of considering emerging companies and industries that may have significant potential for growth.
+
+Further analysis could explore additional factors and variables that may influence the stock prices of these companies, such as market trends, financial performance, and news events. Machine learning techniques could also be applied to develop predictive models for future stock prices and performance. Creative insights could involve exploring how the pandemic may have impacted the stock prices of tech companies, or examining how different political and regulatory environments may affect the sector.
+
+*Student Declaration*: This report is my own research, based on self-study from the labs materials, several sources and documents during the preparation, except where stated explicitly below otherwise is my own work.
+
+# References
+
+-   [The Big Tech. Stock Prices Dataset on Kaggle](https://www.kaggle.com/datasets/evangower/big-tech-stock-prices)
+
+-   [The ggplot2 package Cheatsheet](https://posit.cloud/learn/cheat-sheets)
+
+-   [EDA in R](https://www.statology.org/exploratory-data-analysis-in-r/)
+
+-   [R Documentation](https://cran.r-project.org/doc/manuals/r-release/R-intro.html)
+
+# Appendix
